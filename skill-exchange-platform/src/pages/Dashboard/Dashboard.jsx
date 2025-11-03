@@ -3,6 +3,7 @@ import { useAuth } from '../../contexts';
 import { addRating, getUserStats, completeExchange } from '../../services/firebaseService';
 import RatingModal from '../../components/modals/RatingModal';
 import { GlowingCard, ParallaxCard, Simple3DBackground } from '../../components/animations';
+import CardGlass from '../../components/ui/CardGlass';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -507,7 +508,7 @@ const Dashboard = () => {
           </div>
 
           {/* Monthly XP Progress */}
-          <div className="glass-dark rounded-3xl p-8 neon-border hover-lift lg:col-span-2">
+          <CardGlass padding="lg" className="rounded-3xl hover-lift lg:col-span-2">
             <h2 className="text-2xl font-black text-gray-950 dark:text-white mb-6 gradient-text drop-shadow-sm">Monthly XP Progress</h2>
             <Bar
               data={monthlyXPData}
@@ -537,14 +538,14 @@ const Dashboard = () => {
                 },
               }}
             />
-          </div>
+          </CardGlass>
         </div>
 
         {/* Main Content */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Active Exchanges */}
           <div className="lg:col-span-2">
-            <div className="glass-dark rounded-3xl p-8 neon-border">
+            <CardGlass padding="lg" className="rounded-3xl">
               <h2 className="text-2xl font-black text-gray-950 dark:text-white mb-6 gradient-text drop-shadow-sm">Active Exchanges</h2>
               <div className="space-y-4">
                 {exchanges.map((exchange) => (
@@ -585,7 +586,8 @@ const Dashboard = () => {
                         <button
                           onClick={() => handleCompleteExchange(exchange.id)}
                           disabled={completingExchange === exchange.id}
-                          className="w-full px-6 py-3 bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-xl font-bold hover-lift glow-purple flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                          className="w-full btn-neon glow-emerald disabled:opacity-50 disabled:cursor-not-allowed"
+                          style={{ backgroundImage: 'linear-gradient(135deg, #10b981, #22c55e)' }}
                         >
                           {completingExchange === exchange.id ? (
                             <>
@@ -636,12 +638,12 @@ const Dashboard = () => {
                   </div>
                 ))}
               </div>
-            </div>
+            </CardGlass>
           </div>
 
           {/* Recent Activity */}
           <div className="lg:col-span-1">
-            <div className="glass-dark rounded-3xl p-8 neon-border">
+            <CardGlass padding="lg" className="rounded-3xl">
               <h2 className="text-2xl font-black text-gray-950 dark:text-white mb-6 gradient-text drop-shadow-sm">Recent Activity</h2>
               <div className="space-y-4">
                 {recentActivity.map((activity) => (
@@ -664,7 +666,7 @@ const Dashboard = () => {
                   </div>
                 ))}
               </div>
-            </div>
+            </CardGlass>
           </div>
         </div>
       </div>

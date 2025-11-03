@@ -12,6 +12,8 @@ import {
   ParallaxCard,
   Simple3DBackground
 } from '../../components/animations';
+import ButtonNeon from '../../components/ui/ButtonNeon';
+import CardGlass from '../../components/ui/CardGlass';
 import SplineBackground from '../../components/3d/SplineBackground';
 
 const Landing = () => {
@@ -50,25 +52,18 @@ const Landing = () => {
               </div>
             </FadeInView>
 
-            {/* CTA Buttons with glow effects */}
+            {/* CTA Buttons with neon glow */}
             <FadeInView delay={0.8}>
               <div className="flex flex-col sm:flex-row gap-6 justify-center items-center pt-8">
                 <MagneticButton strength={0.4}>
-                  <Link
-                    to={ROUTES.LOGIN}
-                    className="group relative w-full sm:w-auto px-10 py-5 bg-gradient-to-r from-blue-600 to-purple-600 text-white text-xl font-bold rounded-2xl hover-lift glow-blue overflow-hidden"
-                  >
-                    <span className="relative z-10">Get Started Free →</span>
-                    <div className="absolute inset-0 bg-gradient-to-r from-purple-600 to-blue-600 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                  </Link>
+                  <ButtonNeon to={ROUTES.LOGIN} size="lg" color="blue" className="w-full sm:w-auto glow-indigo shadow-pulse">
+                    Get Started Free →
+                  </ButtonNeon>
                 </MagneticButton>
                 <MagneticButton strength={0.4}>
-                  <Link
-                    to={ROUTES.EXPLORE}
-                    className="w-full sm:w-auto px-10 py-5 glass text-white text-xl font-bold rounded-2xl hover-lift border-2 border-purple-500/50 glow-purple"
-                  >
+                  <ButtonNeon to={ROUTES.EXPLORE} size="lg" variant="outline" className="w-full sm:w-auto glow-purple">
                     Explore Skills ✨
-                  </Link>
+                  </ButtonNeon>
                 </MagneticButton>
               </div>
             </FadeInView>
@@ -77,41 +72,41 @@ const Landing = () => {
             <StaggerChildren staggerDelay={0.15} className="flex flex-wrap justify-center items-center gap-6 pt-12">
               <StaggerItem>
                 <HoverLift>
-                  <div className="glass-dark px-6 py-4 rounded-xl">
+                  <CardGlass padding="md" className="rounded-xl">
                     <div className="flex items-center gap-3">
                       <span className="text-3xl">👥</span>
                       <div className="text-left">
                         <div className="text-2xl font-bold gradient-text">1,000+</div>
-                        <div className="text-sm text-gray-600 dark:text-gray-400">Active Users</div>
+                        <div className="text-sm text-gray-800 dark:text-gray-400 font-semibold">Active Users</div>
                       </div>
                     </div>
-                  </div>
+                  </CardGlass>
                 </HoverLift>
               </StaggerItem>
               <StaggerItem>
                 <HoverLift>
-                  <div className="glass-dark px-6 py-4 rounded-xl">
+                  <CardGlass padding="md" className="rounded-xl">
                     <div className="flex items-center gap-3">
                       <span className="text-3xl">🎓</span>
                       <div className="text-left">
                         <div className="text-2xl font-bold gradient-text">500+</div>
-                        <div className="text-sm text-gray-600 dark:text-gray-400">Skills Exchanged</div>
+                        <div className="text-sm text-gray-800 dark:text-gray-400 font-semibold">Skills Exchanged</div>
                       </div>
                     </div>
-                  </div>
+                  </CardGlass>
                 </HoverLift>
               </StaggerItem>
               <StaggerItem>
                 <HoverLift>
-                  <div className="glass-dark px-6 py-4 rounded-xl">
+                  <CardGlass padding="md" className="rounded-xl">
                     <div className="flex items-center gap-3">
                       <span className="text-3xl">⭐</span>
                       <div className="text-left">
                         <div className="text-2xl font-bold gradient-text">4.9/5</div>
-                        <div className="text-sm text-gray-600 dark:text-gray-400">Rating</div>
+                        <div className="text-sm text-gray-800 dark:text-gray-400 font-semibold">Rating</div>
                       </div>
                     </div>
-                  </div>
+                  </CardGlass>
                 </HoverLift>
               </StaggerItem>
             </StaggerChildren>
