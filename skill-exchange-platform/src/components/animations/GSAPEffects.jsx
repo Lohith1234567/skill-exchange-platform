@@ -18,38 +18,52 @@ export const MagneticButton = ({ children, strength = 0.3, className = '' }) => 
       const { left, top, width, height } = button.getBoundingClientRect();
       const centerX = left + width / 2;
       const centerY = top + height / 2;
-      const deltaX = (e.clientX - centerX) * strength;
-      const deltaY = (e.clientY - centerY) * strength;
+      
+      // Calculate distance from center
+      const distanceX = e.clientX - centerX;
+      const distanceY = e.clientY - centerY;
+      const distance = Math.sqrt(distanceX * distanceX + distanceY * distanceY);
+      
+      // Only apply effect if cursor is within a reasonable range
+      const maxDistance = Math.max(width, height);
+      if (distance > maxDistance) return;
+      
+      const deltaX = distanceX * strength;
+      const deltaY = distanceY * strength;
 
       gsap.to(button, {
         x: deltaX,
         y: deltaY,
-        duration: 0.5,
+        duration: 0.4,
         ease: 'power2.out',
       });
 
-      gsap.to(textRef.current, {
-        x: deltaX * 0.5,
-        y: deltaY * 0.5,
-        duration: 0.5,
-        ease: 'power2.out',
-      });
+      if (textRef.current) {
+        gsap.to(textRef.current, {
+          x: deltaX * 0.3,
+          y: deltaY * 0.3,
+          duration: 0.4,
+          ease: 'power2.out',
+        });
+      }
     };
 
     const handleMouseLeave = () => {
       gsap.to(button, {
         x: 0,
         y: 0,
-        duration: 0.8,
-        ease: 'elastic.out(1, 0.3)',
+        duration: 0.6,
+        ease: 'elastic.out(1, 0.5)',
       });
 
-      gsap.to(textRef.current, {
-        x: 0,
-        y: 0,
-        duration: 0.8,
-        ease: 'elastic.out(1, 0.3)',
-      });
+      if (textRef.current) {
+        gsap.to(textRef.current, {
+          x: 0,
+          y: 0,
+          duration: 0.6,
+          ease: 'elastic.out(1, 0.5)',
+        });
+      }
     };
 
     button.addEventListener('mousemove', handleMouseMove);

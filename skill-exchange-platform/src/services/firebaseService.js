@@ -11,7 +11,7 @@ import {
   limit,
   serverTimestamp 
 } from 'firebase/firestore';
-import { ref, set, push, onValue, off, update } from 'firebase/database';
+import { ref, set, push, onValue, off, update, get } from 'firebase/database';
 import { db, rtdb } from '../firebase/config';
 
 // ============================================
@@ -347,13 +347,23 @@ export const createChat = async (user1Id, user2Id) => {
 };
 
 // List chats for a given user from the index created above
-export const listUserChats = async (userId, callback) => {
+export const listUserChats = (userId, callback) => {
   const userChatsRef = ref(rtdb, `userChats/${userId}`);
   onValue(userChatsRef, (snapshot) => {
     const items = [];
     snapshot.forEach((child) => {
-      items.push({ id: child.key, ...child.val() });
+      const chatData = child.val();
+      items.push({
+        id: child.key,
+        chatId: child.key,
+        otherUserId: chatData.otherUserId,
+        createdAt: chatData.createdAt,
+        lastMessage: chatData.lastMessage || '',
+        lastMessageTime: chatData.lastMessageTime || chatData.createdAt,
+      });
     });
+    // Sort by lastMessageTime descending (most recent first)
+    items.sort((a, b) => (b.lastMessageTime || 0) - (a.lastMessageTime || 0));
     callback(items);
   });
   return () => off(userChatsRef);

@@ -46,6 +46,15 @@ const Dashboard = () => {
   
   const [loading, setLoading] = useState(true);
   const [completingExchange, setCompletingExchange] = useState(null);
+  
+  // SEO: Update document title
+  useEffect(() => {
+    document.title = 'Dashboard - Your Learning Journey | SkillSwap';
+    const metaDescription = document.querySelector('meta[name="description"]');
+    if (metaDescription) {
+      metaDescription.content = 'Track your skill exchange progress, view your statistics, manage active matches, and level up your learning journey on SkillSwap.';
+    }
+  }, []);
 
   const [ratingModal, setRatingModal] = useState({
     isOpen: false,
@@ -284,9 +293,9 @@ const Dashboard = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-indigo-50 flex items-center justify-center">
-        <div className="flex items-center gap-3 text-gray-600">
-          <svg className="animate-spin h-8 w-8 text-indigo-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-indigo-50 dark:from-gray-900 dark:to-indigo-950 flex items-center justify-center">
+        <div className="flex items-center gap-3 text-gray-600 dark:text-gray-400">
+          <svg className="animate-spin h-8 w-8 text-indigo-600 dark:text-indigo-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
             <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
           </svg>
@@ -381,7 +390,7 @@ const Dashboard = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
           <ParallaxCard intensity={8}>
             <GlowingCard glowColor="#3b82f6">
-              <div className="glass-dark rounded-2xl p-8 hover-lift neon-border card-3d">
+              <div className="glass-dark rounded-2xl p-8 neon-border card-3d transition-all duration-300 hover:shadow-2xl hover:scale-[1.02]">
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-gray-800 dark:text-gray-300 text-sm font-bold">Total Exchanges</p>
@@ -399,7 +408,7 @@ const Dashboard = () => {
 
           <ParallaxCard intensity={8}>
             <GlowingCard glowColor="#10b981">
-              <div className="glass-dark rounded-2xl p-8 hover-lift neon-border card-3d">
+              <div className="glass-dark rounded-2xl p-8 neon-border card-3d transition-all duration-300 hover:shadow-2xl hover:scale-[1.02]">
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-gray-800 dark:text-gray-300 text-sm font-bold">Active Exchanges</p>
@@ -417,7 +426,7 @@ const Dashboard = () => {
 
           <ParallaxCard intensity={8}>
             <GlowingCard glowColor="#8b5cf6">
-              <div className="glass-dark rounded-2xl p-8 hover-lift neon-border card-3d">
+              <div className="glass-dark rounded-2xl p-8 neon-border card-3d transition-all duration-300 hover:shadow-2xl hover:scale-[1.02]">
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-gray-800 dark:text-gray-300 text-sm font-bold">Hours Learned</p>
@@ -435,7 +444,7 @@ const Dashboard = () => {
 
           <ParallaxCard intensity={8}>
             <GlowingCard glowColor="#f97316">
-              <div className="glass-dark rounded-2xl p-8 hover-lift neon-border card-3d">
+              <div className="glass-dark rounded-2xl p-8 neon-border card-3d transition-all duration-300 hover:shadow-2xl hover:scale-[1.02]">
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-gray-800 dark:text-gray-300 text-sm font-bold">Hours Taught</p>

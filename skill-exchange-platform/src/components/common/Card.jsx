@@ -1,9 +1,10 @@
 const Card = ({ children, className = '', hover = false, ...props }) => {
-  const hoverClass = hover ? 'hover:shadow-lg transition-shadow' : '';
+  // Use unified design system
+  const hoverClass = hover ? 'card-hover' : '';
   
   return (
     <div
-      className={`bg-white rounded-xl shadow-md p-6 ${hoverClass} ${className}`}
+      className={`card ${hoverClass} ${className}`}
       {...props}
     >
       {children}

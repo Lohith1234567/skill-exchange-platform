@@ -1,11 +1,13 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useEffect, useMemo, useRef, useState, useCallback } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts';
 import { createChat, getChatMessages, sendMessage, listUserChats } from '../../services/firebaseService';
+import { ROUTES } from '../../routes';
 
 const Chat = () => {
   const { conversationId } = useParams(); // other user's uid if provided
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [selectedChat, setSelectedChat] = useState(null); // chatId
   const [message, setMessage] = useState('');
   const [conversations, setConversations] = useState([]);
@@ -16,7 +18,7 @@ const Chat = () => {
   const listUnsubRef = useRef(null);
   const bottomRef = useRef(null);
 
-  const formatDayLabel = (ts) => {
+  const formatDayLabel = useCallback((ts) => {
     if (!ts) return '';
     const d = new Date(ts);
     const today = new Date();
@@ -26,198 +28,162 @@ const Chat = () => {
     if (isSameDay(d, today)) return 'Today';
     if (isSameDay(d, yesterday)) return 'Yesterday';
     return d.toLocaleDateString();
-  };
+  }, []);
 
-  const formatTimeShort = (ts) => {
+  const formatTimeShort = useCallback((ts) => {
     if (!ts) return '';
     const d = new Date(ts);
     return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-  };
+  }, []);
 
-  /* Mock fallback is retained but will be replaced by realtime data */
-  const mockConversations = [
-    {
-      id: 1,
-      name: 'Sarah Johnson',
-      avatar: 'SJ',
-      lastMessage: 'That sounds great! When can we start our first session?',
-      time: '2m ago',
-      unread: 2,
-      online: true,
-      skills: 'React ↔ Python',
-    },
-    {
-      id: 2,
-      name: 'Mike Chen',
-      avatar: 'MC',
-      lastMessage: 'Thanks for the Python tips yesterday!',
-      time: '1h ago',
-      unread: 0,
-      online: false,
-      skills: 'Python ↔ Web Dev',
-    },
-    {
-      id: 3,
-      name: 'Emily Rodriguez',
-      avatar: 'ER',
-      lastMessage: 'I can help you with Figma this weekend',
-      time: '3h ago',
-      unread: 1,
-      online: true,
-      skills: 'UI/UX ↔ CSS',
-    },
-    {
-      id: 4,
-      name: 'David Kim',
-      avatar: 'DK',
-      lastMessage: 'Awesome! Let me know when you are free',
-      time: '1d ago',
-      unread: 0,
-      online: false,
-      skills: 'Photography ↔ Design',
-    },
-    {
-      id: 5,
-      name: 'Lisa Wang',
-      avatar: 'LW',
-      lastMessage: '¡Perfecto! Nos vemos mañana 😊',
-      time: '2d ago',
-      unread: 0,
-      online: true,
-      skills: 'Spanish ↔ French',
-    },
-  ];
-
-  const messageHistory = {
-    1: [
-      {
-        id: 1,
-        sender: 'Sarah Johnson',
-        text: 'Hi! I saw your profile and noticed you want to learn Python. I would love to help!',
-        time: '10:30 AM',
-        isOwn: false,
-        date: 'Today',
-      },
-      {
-        id: 2,
-        sender: 'You',
-        text: 'That is awesome! I have been wanting to learn Python for data science.',
-        time: '10:32 AM',
-        isOwn: true,
-        date: 'Today',
-      },
-      {
-        id: 3,
-        sender: 'Sarah Johnson',
-        text: 'Perfect! I actually need help with React for a project I am working on. Would you be interested in exchanging?',
-        time: '10:35 AM',
-        isOwn: false,
-        date: 'Today',
-      },
-      {
-        id: 4,
-        sender: 'You',
-        text: 'Absolutely! I have been working with React for 3 years. Happy to teach you.',
-        time: '10:36 AM',
-        isOwn: true,
-        date: 'Today',
-      },
-      {
-        id: 5,
-        sender: 'Sarah Johnson',
-        text: 'Great! What is your availability? I am usually free on weekends.',
-        time: '10:38 AM',
-        isOwn: false,
-        date: 'Today',
-      },
-      {
-        id: 6,
-        sender: 'You',
-        text: 'Weekends work perfectly for me too! How about this Saturday at 2 PM?',
-        time: '10:40 AM',
-        isOwn: true,
-        date: 'Today',
-      },
-      {
-        id: 7,
-        sender: 'Sarah Johnson',
-        text: 'That sounds great! When can we start our first session?',
-        time: '10:42 AM',
-        isOwn: false,
-        date: 'Today',
-      },
-    ],
-    2: [
-      {
-        id: 1,
-        sender: 'Mike Chen',
-        text: 'Hey! Thanks for the Python tips yesterday!',
-        time: '2:15 PM',
-        isOwn: false,
-        date: 'Yesterday',
-      },
-    ],
-  };
-
+  // The currently selected conversation object (compute before using it in other hooks)
   const currentConversation = useMemo(() => {
-    const list = conversations.length ? conversations : mockConversations;
-    return list.find((c) => c.id === selectedChat);
-  }, [conversations, mockConversations, selectedChat]);
+    return conversations.find((c) => c.id === selectedChat);
+  }, [conversations, selectedChat]);
+
+  // Resolve a friendly display name for a given uid (self, other, fallback)
+  const getDisplayName = useCallback(
+    (uid) => {
+      if (!uid) return 'User';
+      if (uid === user?.uid) {
+        // Prefer profile/display name if available
+        return user?.displayName || 'You';
+      }
+      if (currentConversation?.otherUserId === uid) {
+        return currentConversation?.name || uid;
+      }
+      // Fallback to trimmed uid
+      return uid;
+    },
+    [user?.uid, user?.displayName, currentConversation?.otherUserId, currentConversation?.name]
+  );
+
+  // SEO: Update document title
+  useEffect(() => {
+    const otherUserName = currentConversation?.name || 'User';
+    document.title = selectedChat 
+      ? `Chat with ${otherUserName} | SkillSwap`
+      : 'Messages - Connect and Learn | SkillSwap';
+    const metaDescription = document.querySelector('meta[name="description"]');
+    if (metaDescription) {
+      metaDescription.content = 'Chat with your skill exchange partners, coordinate learning sessions, and build meaningful connections on SkillSwap.';
+    }
+  }, [selectedChat, currentConversation]);
 
   // Derive chatId for a pair of users
-  const makeChatId = (a, b) => [a, b].sort().join('_');
+  const makeChatId = useCallback((a, b) => [a, b].sort().join('_'), []);
 
   // Subscribe to the user's chat list and handle deep links
   useEffect(() => {
     if (!user?.uid) return;
     let isMounted = true;
+    
     // Subscribe to user's chats (sidebar)
-    listUserChats(user.uid, (items) => {
+    const unsubscribe = listUserChats(user.uid, async (items) => {
       if (!isMounted) return;
-      const mapped = items.map((it) => ({
-        id: it.chatId,
-        name: it.otherUserId,
-        avatar: (it.otherUserId || 'U').slice(0, 2).toUpperCase(),
-        lastMessage: it.lastMessage || '',
-        time: formatTimeShort(it.lastMessageTime),
-        unread: 0,
-        online: false,
-        skills: '',
-        otherUserId: it.otherUserId,
-      }));
-      setConversations(mapped);
-    }).then((unsub) => {
-      if (isMounted) {
-        listUnsubRef.current = unsub;
-      } else if (typeof unsub === 'function') {
-        unsub();
-      }
-    }).catch(() => {});
+      
+      // Fetch user profiles for each conversation
+      const { getUserProfile } = await import('../../services/firebaseService');
+      const enrichedItems = await Promise.all(
+        items.map(async (it) => {
+          try {
+            const otherUserProfile = await getUserProfile(it.otherUserId);
+            const userName = otherUserProfile?.name || it.otherUserId;
+            return {
+              id: it.chatId,
+              name: userName,
+              avatar: userName.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase(),
+              lastMessage: it.lastMessage || '',
+              time: formatTimeShort(it.lastMessageTime),
+              unread: 0,
+              online: false,
+              skills: '',
+              otherUserId: it.otherUserId,
+            };
+          } catch (error) {
+            console.error('Error fetching user profile:', error);
+            return {
+              id: it.chatId,
+              name: it.otherUserId,
+              avatar: (it.otherUserId || 'U').slice(0, 2).toUpperCase(),
+              lastMessage: it.lastMessage || '',
+              time: formatTimeShort(it.lastMessageTime),
+              unread: 0,
+              online: false,
+              skills: '',
+              otherUserId: it.otherUserId,
+            };
+          }
+        })
+      );
+      
+      setConversations(enrichedItems);
+    });
+    
+    listUnsubRef.current = unsubscribe;
 
     // If deep-linked to another user, ensure chat exists and select it
     if (conversationId) {
       const cid = makeChatId(user.uid, conversationId);
       setSelectedChat(cid);
       createChat(user.uid, conversationId).catch(() => {});
-      // Also ensure it shows up in the sidebar immediately
-      setConversations((prev) => {
-        const exists = prev.some((c) => c.id === cid);
-        if (exists) return prev;
-        return [
-          {
-            id: cid,
-            name: conversationId,
-            avatar: (conversationId || 'U').slice(0, 2).toUpperCase(),
-            lastMessage: '',
-            time: '',
-            unread: 0,
-            online: false,
-            skills: '',
-            otherUserId: conversationId,
-          },
-          ...prev,
-        ];
-      });
+      
+      // Fetch the user profile for the deep-linked conversation
+      (async () => {
+        try {
+          const { getUserProfile } = await import('../../services/firebaseService');
+          const otherUserProfile = await getUserProfile(conversationId);
+          const userName = otherUserProfile?.name || conversationId;
+          
+          // Ensure it shows up in the sidebar with the actual user name
+          setConversations((prev) => {
+            const exists = prev.some((c) => c.id === cid);
+            if (exists) {
+              // Update existing conversation with user name
+              return prev.map((c) => 
+                c.id === cid 
+                  ? { ...c, name: userName, avatar: userName.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() }
+                  : c
+              );
+            }
+            return [
+              {
+                id: cid,
+                name: userName,
+                avatar: userName.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase(),
+                lastMessage: '',
+                time: '',
+                unread: 0,
+                online: false,
+                skills: '',
+                otherUserId: conversationId,
+              },
+              ...prev,
+            ];
+          });
+        } catch (error) {
+          console.error('Error fetching user profile for deep link:', error);
+          // Fallback to user ID
+          setConversations((prev) => {
+            const exists = prev.some((c) => c.id === cid);
+            if (exists) return prev;
+            return [
+              {
+                id: cid,
+                name: conversationId,
+                avatar: (conversationId || 'U').slice(0, 2).toUpperCase(),
+                lastMessage: '',
+                time: '',
+                unread: 0,
+                online: false,
+                skills: '',
+                otherUserId: conversationId,
+              },
+              ...prev,
+            ];
+          });
+        }
+      })();
     }
 
     return () => {
@@ -238,21 +204,10 @@ const Chat = () => {
     if (selectedChat) return;
     if (conversations.length) {
       setSelectedChat(conversations[0].id);
-    } else if (mockConversations.length) {
-      const firstMock = mockConversations[0].id;
-      setSelectedChat(firstMock);
-      setCurrentMessages(
-        (messageHistory[firstMock] || []).map((m) => ({
-          id: m.id,
-          senderId: m.isOwn ? user?.uid : 'other',
-          text: m.text,
-          timestamp: Date.now(),
-        }))
-      );
     }
-  }, [conversations, mockConversations, selectedChat, user?.uid]);
+  }, [conversations, selectedChat]);
 
-  // Subscribe to messages for the selected chat (real chats only)
+  // Subscribe to messages for the selected chat
   useEffect(() => {
     const isRealChat = typeof selectedChat === 'string' && selectedChat.includes('_');
     if (!isRealChat) return;
@@ -265,25 +220,6 @@ const Chat = () => {
       }
     };
   }, [selectedChat]);
-
-  // Load mock messages when a mock conversation is selected
-  useEffect(() => {
-    if (!selectedChat) return;
-    const isRealChat = typeof selectedChat === 'string' && selectedChat.includes('_');
-    if (isRealChat) return;
-    if (messagesUnsubRef.current) {
-      messagesUnsubRef.current();
-      messagesUnsubRef.current = null;
-    }
-    setCurrentMessages(
-      (messageHistory[selectedChat] || []).map((m) => ({
-        id: m.id,
-        senderId: m.isOwn ? user?.uid : 'other',
-        text: m.text,
-        timestamp: Date.now(),
-      }))
-    );
-  }, [selectedChat, user?.uid]);
 
   // Auto-scroll to the latest message
   useEffect(() => {
@@ -339,40 +275,57 @@ const Chat = () => {
 
         {/* Conversations List */}
         <div className="flex-1 overflow-y-auto">
-          {(conversations.length ? conversations : mockConversations).map((conversation) => (
-            <button
+          {conversations.length === 0 && (
+            <div className="flex flex-col items-center justify-center h-full text-center p-6">
+              <div className="text-6xl mb-4">💬</div>
+              <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">No conversations yet</h3>
+              <p className="text-gray-600 dark:text-gray-400">Start a conversation from the Explore page to see it here</p>
+            </div>
+          )}
+          {conversations.map((conversation) => (
+            <div
               key={conversation.id}
-              onClick={() => {
-                setSelectedChat(conversation.id);
-              }}
-              className={`w-full p-4 border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 transition text-left ${
+              className={`relative group w-full border-b border-gray-100 dark:border-gray-700 ${
                 selectedChat === conversation.id ? 'bg-indigo-50 dark:bg-indigo-900/30 border-l-4 border-l-indigo-600 dark:border-l-indigo-400' : ''
               }`}
             >
-              <div className="flex items-start gap-3">
-                {/* Avatar */}
-                <div className="relative flex-shrink-0">
-                  <div className="w-12 h-12 bg-indigo-600 dark:bg-indigo-500 rounded-full flex items-center justify-center text-white font-bold">
-                    {conversation.avatar}
-                  </div>
-                  {conversation.online && (
-                    <div className="absolute bottom-0 right-0 w-3.5 h-3.5 bg-green-500 rounded-full border-2 border-white dark:border-gray-800"></div>
-                  )}
-                </div>
+              <button
+                onClick={() => {
+                  setSelectedChat(conversation.id);
+                }}
+                className="w-full p-4 hover:bg-gray-50 dark:hover:bg-gray-700 transition text-left"
+              >
+                <div className="flex items-start gap-3">
+                  {/* Avatar - Clickable to profile */}
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      navigate(`${ROUTES.PROFILE}/${conversation.otherUserId}`);
+                    }}
+                    className="relative flex-shrink-0 hover:opacity-80 transition"
+                    title="View profile"
+                  >
+                    <div className="w-12 h-12 bg-indigo-600 dark:bg-indigo-500 rounded-full flex items-center justify-center text-white font-bold">
+                      {conversation.avatar}
+                    </div>
+                    {conversation.online && (
+                      <div className="absolute bottom-0 right-0 w-3.5 h-3.5 bg-green-500 rounded-full border-2 border-white dark:border-gray-800"></div>
+                    )}
+                  </button>
 
-                {/* Content */}
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center justify-between mb-1">
-                    <h3 className="font-semibold text-gray-900 dark:text-white truncate pr-2">
-                      {conversation.name}
-                    </h3>
-                    <span className="text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap">{conversation.time}</span>
+                  {/* Content */}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between mb-1">
+                      <h3 className="font-semibold text-gray-900 dark:text-white truncate pr-2">
+                        {conversation.name}
+                      </h3>
+                      <span className="text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap">{conversation.time}</span>
+                    </div>
+                    
+                    <p className="text-xs text-indigo-600 dark:text-indigo-400 mb-1 font-medium">{conversation.skills}</p>
+                    
+                    <p className="text-sm text-gray-600 dark:text-gray-300 truncate">{conversation.lastMessage}</p>
                   </div>
-                  
-                  <p className="text-xs text-indigo-600 dark:text-indigo-400 mb-1 font-medium">{conversation.skills}</p>
-                  
-                  <p className="text-sm text-gray-600 dark:text-gray-300 truncate">{conversation.lastMessage}</p>
-                </div>
 
                 {/* Unread Badge */}
                 {conversation.unread > 0 && (
@@ -384,6 +337,7 @@ const Chat = () => {
                 )}
               </div>
             </button>
+            </div>
           ))}
         </div>
       </div>
@@ -404,27 +358,37 @@ const Chat = () => {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
                   </svg>
                 </button>
-                <div className="relative">
-                  <div className="w-10 h-10 bg-indigo-600 dark:bg-indigo-500 rounded-full flex items-center justify-center text-white font-bold">
-                    {currentConversation.avatar}
-                  </div>
-                  {currentConversation.online && (
-                    <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white dark:border-gray-800"></div>
-                  )}
-                </div>
-                <div>
-                  <h3 className="font-semibold text-gray-900 dark:text-white">{currentConversation.name}</h3>
-                  <p className="text-sm text-gray-600 dark:text-gray-300">
-                    {currentConversation.online ? (
-                      <span className="text-green-600 dark:text-green-400 flex items-center gap-1">
-                        <span className="inline-block w-2 h-2 bg-green-500 rounded-full"></span>
-                        Online
-                      </span>
-                    ) : (
-                      'Offline'
+                
+                {/* Clickable Profile Section */}
+                <button 
+                  onClick={() => navigate(`${ROUTES.PROFILE}/${currentConversation.otherUserId}`)}
+                  className="flex items-center gap-3 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg p-2 -ml-2 transition"
+                  title="View profile"
+                >
+                  <div className="relative">
+                    <div className="w-10 h-10 bg-indigo-600 dark:bg-indigo-500 rounded-full flex items-center justify-center text-white font-bold">
+                      {currentConversation.avatar}
+                    </div>
+                    {currentConversation.online && (
+                      <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white dark:border-gray-800"></div>
                     )}
-                  </p>
-                </div>
+                  </div>
+                  <div className="text-left">
+                    <h3 className="font-semibold text-gray-900 dark:text-white hover:text-indigo-600 dark:hover:text-indigo-400 transition">
+                      {currentConversation.name}
+                    </h3>
+                    <p className="text-sm text-gray-600 dark:text-gray-300">
+                      {currentConversation.online ? (
+                        <span className="text-green-600 dark:text-green-400 flex items-center gap-1">
+                          <span className="inline-block w-2 h-2 bg-green-500 rounded-full"></span>
+                          Online
+                        </span>
+                      ) : (
+                        'Offline'
+                      )}
+                    </p>
+                  </div>
+                </button>
               </div>
               <div className="flex items-center gap-2">
                 <button className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition">
@@ -462,7 +426,7 @@ const Chat = () => {
                 >
                   <div className={`max-w-md lg:max-w-lg xl:max-w-xl ${m.senderId === user?.uid ? 'order-2' : 'order-1'}`}>
                     {m.senderId !== user?.uid && (
-                      <p className="text-xs text-gray-600 dark:text-gray-400 mb-1 ml-1">{m.senderId}</p>
+                      <p className="text-xs text-gray-600 dark:text-gray-400 mb-1 ml-1">{getDisplayName(m.senderId)}</p>
                     )}
                     <div
                       className={`rounded-2xl px-4 py-3 shadow-sm ${

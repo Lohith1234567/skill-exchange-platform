@@ -5,15 +5,34 @@ const DarkModeContext = createContext(null);
 
 export const DarkModeProvider = ({ children }) => {
   const [theme, setTheme] = useState(() => {
-    // Check localStorage first
-    const saved = localStorage.getItem('theme');
-    if (saved && ['auto', 'light', 'dark'].includes(saved)) {
-      return saved;
+    // Check localStorage first with error handling
+    try {
+      const saved = localStorage.getItem('theme');
+      if (saved && ['auto', 'light', 'dark'].includes(saved)) {
+        return saved;
+      }
+    } catch (error) {
+      console.warn('Failed to read theme from localStorage:', error);
     }
     return 'auto'; // Default to auto
   });
 
-  const [isDarkMode, setIsDarkMode] = useState(false);
+  const [isDarkMode, setIsDarkMode] = useState(() => {
+    // Initialize dark mode immediately to prevent flash
+    try {
+      const saved = localStorage.getItem('theme');
+      if (saved === 'dark') {
+        return true;
+      } else if (saved === 'light') {
+        return false;
+      }
+      // auto mode - check system preference
+      return window.matchMedia('(prefers-color-scheme: dark)').matches;
+    } catch (error) {
+      console.warn('Failed to initialize dark mode:', error);
+      return false;
+    }
+  });
 
   // Listen to system preference changes
   useEffect(() => {
@@ -47,18 +66,40 @@ export const DarkModeProvider = ({ children }) => {
 
     setIsDarkMode(shouldBeDark);
 
-    // Apply the dark class to the root html element
+    // Apply the dark class to both html and body elements
     const root = document.documentElement;
+    const body = document.body;
+    
+    // Define gradient backgrounds
+    const lightGradient = 'linear-gradient(135deg, #f0f4ff 0%, #e0e7ff 50%, #f5f3ff 100%)';
+    const darkGradient = 'linear-gradient(135deg, #0a0e27 0%, #1a1f3a 50%, #0f1729 100%)';
+    
     if (shouldBeDark) {
       root.classList.add('dark');
-      console.log('Dark mode enabled:', theme);
+      body.classList.add('dark');
+      // FORCE background with inline style
+      body.style.background = darkGradient;
+      body.style.backgroundAttachment = 'fixed';
+      root.style.background = darkGradient;
+      root.style.backgroundAttachment = 'fixed';
+      console.log('Dark mode enabled:', theme, '- Background set to dark gradient');
     } else {
       root.classList.remove('dark');
-      console.log('Light mode enabled:', theme);
+      body.classList.remove('dark');
+      // FORCE background with inline style
+      body.style.background = lightGradient;
+      body.style.backgroundAttachment = 'fixed';
+      root.style.background = lightGradient;
+      root.style.backgroundAttachment = 'fixed';
+      console.log('Light mode enabled:', theme, '- Background set to light gradient');
     }
 
     // Save to localStorage
-    localStorage.setItem('theme', theme);
+    try {
+      localStorage.setItem('theme', theme);
+    } catch (error) {
+      console.warn('Failed to save theme to localStorage:', error);
+    }
   }, [theme]);
 
   const setThemeMode = (newTheme) => {

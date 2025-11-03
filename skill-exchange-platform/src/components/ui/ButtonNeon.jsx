@@ -22,6 +22,7 @@ function classNames(...args) {
  *  - variant: 'solid' | 'outline'
  *  - color: keyof typeof gradients
  *  - size: 'sm' | 'md' | 'lg'
+ *  - as: component type (default: auto-detect based on 'to' prop)
  *  - className: string
  */
 export default function ButtonNeon({
@@ -31,6 +32,7 @@ export default function ButtonNeon({
   variant = 'solid',
   color = 'blue',
   size = 'md',
+  as,
   className,
   ...rest
 }) {
@@ -66,7 +68,8 @@ export default function ButtonNeon({
     ? { backgroundImage: `linear-gradient(135deg, ${from}, ${toColor})` }
     : undefined;
 
-  const Component = to ? Link : 'button';
+  // Determine the component type
+  const Component = as || (to ? Link : 'button');
 
   return (
     <Component

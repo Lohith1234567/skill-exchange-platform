@@ -1,6 +1,7 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { MainLayout } from './components/layout';
 import { AuthProvider, DarkModeProvider, useAuth } from './contexts';
+import { ErrorBoundary } from './components/common';
 
 // Pages
 import Landing from './pages/Landing';
@@ -37,14 +38,15 @@ const ProtectedRoute = ({ children }) => {
 
 function App() {
   return (
-    <DarkModeProvider>
-      <AuthProvider>
-        <Router>
-          <Routes>
-            {/* Public routes with layout */}
-            <Route path="/" element={<MainLayout />}>
-              <Route index element={<Landing />} />
-            </Route>
+    <ErrorBoundary>
+      <DarkModeProvider>
+        <AuthProvider>
+          <Router>
+            <Routes>
+              {/* Public routes with layout */}
+              <Route path="/" element={<MainLayout />}>
+                <Route index element={<Landing />} />
+              </Route>
 
             {/* Auth route (no layout) */}
             <Route path="/login" element={<Login />} />
@@ -84,6 +86,7 @@ function App() {
         </Router>
       </AuthProvider>
     </DarkModeProvider>
+    </ErrorBoundary>
   );
 }
 
